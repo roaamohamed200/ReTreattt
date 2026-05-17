@@ -1,0 +1,1457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>ReTreat — Medicine Sharing Platform</title>
+
+<!-- Google Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<!-- Google Sign-In SDK -->
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<!-- Facebook SDK -->
+<script async defer crossorigin="anonymous" src="https://connect.facebook.net/en_US/sdk.js"></script>
+<!-- Apple Sign In -->
+<script type="text/javascript" src="https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/en_US/appleid.auth.js"></script>
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --ink:#0d1b2a;--ink2:#1b2e42;--ink3:#4a6278;--ink4:#8fa3b1;
+  --paper:#f6f4ef;--paper2:#ece9e1;--paper3:#e0dbd0;
+  --white:#ffffff;
+  --gold:#9a7340;--gold2:#c49a55;--gold3:#f2e8d5;
+  --teal:#1a6b5a;--teal2:#e5f5ef;
+  --red:#8b2020;--red2:#fdf0f0;
+  --blue:#1a3a5c;--blue2:#e5eef8;
+  --sdg-green:#3f7e44;--sdg-light:#e8f4ea;
+  --border:rgba(0,0,0,.09);--border2:rgba(0,0,0,.05);
+  --shadow:0 1px 4px rgba(0,0,0,.07);
+  --shadow2:0 6px 24px rgba(0,0,0,.13);
+  --r:4px;--r2:8px;--r3:14px;
+  --serif:'Playfair Display',Georgia,serif;
+  --sans:'DM Sans',-apple-system,sans-serif;
+}
+html{font-size:14px}
+body{font-family:var(--sans);background:var(--paper);color:var(--ink);min-height:100vh;-webkit-font-smoothing:antialiased}
+
+/* ───────────── SDG SPLASH ───────────── */
+#sdg-splash{
+  position:fixed;inset:0;z-index:10000;
+  background:var(--sdg-green);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  transition:opacity .9s ease;
+}
+.sdg-wheel{
+  width:110px;height:110px;border-radius:50%;
+  background:conic-gradient(
+    #e5243b 0% 7.7%,#dda63a 7.7% 15.4%,#4c9f38 15.4% 23.1%,
+    #c5192d 23.1% 30.8%,#ff3a21 30.8% 38.5%,#26bde2 38.5% 46.2%,
+    #fcc30b 46.2% 53.8%,#a21942 53.8% 61.5%,#fd6925 61.5% 69.2%,
+    #dd1367 69.2% 76.9%,#fd9d24 76.9% 84.6%,#bf8b2e 84.6% 92.3%,
+    #3f7e44 92.3% 100%
+  );
+  display:flex;align-items:center;justify-content:center;
+  margin-bottom:24px;
+  box-shadow:0 4px 24px rgba(0,0,0,.3);
+  animation:spinIn .8s ease forwards;
+}
+@keyframes spinIn{from{transform:scale(.4) rotate(-180deg);opacity:0}to{transform:scale(1) rotate(0);opacity:1}}
+.sdg-inner{
+  width:80px;height:80px;border-radius:50%;
+  background:var(--sdg-green);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  color:#fff;text-align:center;
+}
+.sdg-inner .sdg-num{font-size:1.6rem;font-weight:700;line-height:1;font-family:var(--sans)}
+.sdg-inner .sdg-small{font-size:.45rem;text-transform:uppercase;letter-spacing:1px;margin-top:2px;opacity:.85}
+.sdg-title{
+  font-family:var(--serif);font-size:1.6rem;color:#fff;
+  text-align:center;max-width:320px;line-height:1.4;margin-bottom:10px;
+  animation:fadeUp .6s .4s both;
+}
+.sdg-sub{
+  font-size:.78rem;color:rgba(255,255,255,.7);
+  text-align:center;max-width:280px;line-height:1.7;
+  animation:fadeUp .6s .6s both;margin-bottom:28px;
+}
+.sdg-brand{
+  display:flex;align-items:baseline;gap:2px;
+  animation:fadeUp .6s .8s both;
+}
+.sdg-re{font-family:var(--serif);font-size:2rem;color:#fcc30b;font-style:italic}
+.sdg-treat{font-family:var(--serif);font-size:2rem;color:#fff}
+.sdg-tag{font-size:.62rem;color:rgba(255,255,255,.45);letter-spacing:3px;text-transform:uppercase;margin-top:4px;text-align:center;animation:fadeUp .6s 1s both}
+.sdg-progress{
+  width:200px;height:2px;background:rgba(255,255,255,.2);
+  margin-top:28px;border-radius:2px;overflow:hidden;
+  animation:fadeUp .4s 1s both;
+}
+.sdg-bar{height:100%;background:#fcc30b;animation:barFill 2.6s ease forwards}
+@keyframes barFill{from{width:0}to{width:100%}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+
+/* ───────────── SHARED-SUBMIT SCREEN ───────────── */
+#shared-screen{
+  display:none;min-height:100vh;background:var(--paper);
+  align-items:center;justify-content:center;padding:24px;
+}
+.shared-wrap{
+  max-width:540px;width:100%;
+  background:var(--white);border-radius:var(--r3);
+  box-shadow:0 8px 40px rgba(0,0,0,.14);overflow:hidden;
+}
+.shared-hdr{
+  background:var(--sdg-green);padding:24px 28px;
+  display:flex;align-items:center;gap:14px;
+}
+.shared-hdr-icon{font-size:2rem}
+.shared-hdr h2{font-family:var(--serif);font-size:1.2rem;color:#fff;font-weight:normal}
+.shared-hdr p{font-size:.72rem;color:rgba(255,255,255,.65);margin-top:2px}
+.disclaimer-box{
+  margin:20px 24px 0;padding:12px 14px;
+  background:var(--red2);border:1px solid rgba(139,32,32,.2);
+  border-radius:var(--r);display:flex;gap:10px;align-items:flex-start;
+}
+.disc-icon{font-size:1rem;flex-shrink:0;margin-top:1px}
+.disc-text{font-size:.74rem;color:var(--red);line-height:1.6}
+.disc-text strong{font-weight:700}
+.shared-form{padding:20px 24px 24px}
+
+/* ───────────── AUTH ───────────── */
+#auth-screen{display:none;min-height:100vh;background:var(--paper);align-items:center;justify-content:center;padding:24px}
+.auth-wrap{display:grid;grid-template-columns:400px 360px;gap:0;box-shadow:0 8px 48px rgba(0,0,0,.18);border-radius:var(--r3);overflow:hidden;max-width:780px;width:100%}
+.auth-panel{background:var(--ink);padding:44px 36px;display:flex;flex-direction:column;justify-content:space-between}
+.ap-sdg{display:flex;align-items:center;gap:10px;background:rgba(63,126,68,.25);border:1px solid rgba(63,126,68,.4);border-radius:var(--r);padding:10px 14px;margin-bottom:24px}
+.ap-sdg-num{width:36px;height:36px;border-radius:50%;background:var(--sdg-green);display:flex;align-items:center;justify-content:center;color:#fff;font-size:.9rem;font-weight:700;flex-shrink:0;font-family:var(--sans)}
+.ap-sdg-text{font-size:.72rem;color:rgba(255,255,255,.6);line-height:1.5}
+.ap-sdg-text strong{color:#4cba6e;font-weight:600}
+.ap-logo{margin-bottom:8px}
+.ap-re{font-family:var(--serif);font-size:2rem;color:var(--gold2);font-style:italic}
+.ap-treat{font-family:var(--serif);font-size:2rem;color:var(--white)}
+.ap-tag{font-size:.62rem;color:rgba(255,255,255,.3);letter-spacing:3px;text-transform:uppercase;margin-top:4px}
+.ap-line{width:28px;height:1px;background:var(--gold);margin:20px 0}
+.ap-desc{color:rgba(255,255,255,.5);font-size:.78rem;line-height:1.8;margin-bottom:22px}
+.ap-feat{display:flex;align-items:center;gap:10px;margin-bottom:10px;color:rgba(255,255,255,.45);font-size:.75rem}
+.ap-feat-dot{width:4px;height:4px;border-radius:50%;background:var(--gold2);flex-shrink:0}
+.ap-share-link{margin-top:20px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:var(--r);padding:10px 12px}
+.ap-share-lbl{font-size:.62rem;color:rgba(255,255,255,.35);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px}
+.ap-share-url{font-size:.72rem;color:var(--gold2);font-family:monospace;word-break:break-all}
+.copy-link-btn{margin-top:6px;background:none;border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.5);padding:4px 10px;border-radius:3px;font-size:.65rem;cursor:pointer;font-family:var(--sans);transition:.2s}
+.copy-link-btn:hover{border-color:var(--gold2);color:var(--gold2)}
+.auth-form-panel{background:var(--white);padding:36px}
+.atabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:24px}
+.atab{flex:1;padding:9px 0;background:none;border:none;font-family:var(--sans);font-size:.78rem;font-weight:600;color:var(--ink4);cursor:pointer;letter-spacing:.5px;text-transform:uppercase;border-bottom:2px solid transparent;margin-bottom:-1px;transition:.2s}
+.atab.active{color:var(--ink);border-bottom-color:var(--gold)}
+.soc-row{display:flex;flex-direction:column;gap:8px;margin-bottom:18px}
+.soc-btn{display:flex;align-items:center;justify-content:center;gap:10px;padding:10px;border:1px solid var(--border);border-radius:var(--r);background:var(--white);cursor:pointer;font-size:.78rem;font-weight:600;color:var(--ink2);transition:.2s;font-family:var(--sans)}
+.soc-btn:hover{border-color:var(--ink2);background:var(--paper)}
+.soc-btn svg{width:16px;height:16px;flex-shrink:0}
+.soc-btn.loading{opacity:.6;pointer-events:none}
+.or-div{text-align:center;font-size:.68rem;color:var(--ink4);margin:14px 0;text-transform:uppercase;letter-spacing:1px;position:relative}
+.or-div::before,.or-div::after{content:'';position:absolute;top:50%;width:44%;height:1px;background:var(--border)}
+.or-div::before{right:0}.or-div::after{left:0}
+.fg{margin-bottom:12px}
+.fg label{display:block;font-size:.65rem;font-weight:700;color:var(--ink3);margin-bottom:5px;text-transform:uppercase;letter-spacing:.8px}
+.fg input{width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:var(--r);font-size:.82rem;font-family:var(--sans);color:var(--ink);background:var(--paper);outline:none;transition:.2s}
+.fg input:focus{border-color:var(--gold);background:var(--white)}
+.btn-main{width:100%;padding:11px;background:var(--ink);color:var(--gold2);border:none;border-radius:var(--r);font-size:.78rem;font-weight:700;cursor:pointer;letter-spacing:1.5px;text-transform:uppercase;font-family:var(--sans);transition:.2s;margin-top:4px}
+.btn-main:hover{background:var(--ink2)}
+
+/* ───────────── APP SHELL ───────────── */
+#app{display:none;min-height:100vh;flex-direction:column}
+#app.show{display:flex}
+.topbar{background:var(--ink);height:52px;display:flex;align-items:center;padding:0 22px;position:sticky;top:0;z-index:300;border-bottom:1px solid rgba(255,255,255,.07)}
+.tb-logo{display:flex;align-items:baseline;gap:2px;margin-right:28px;flex-shrink:0}
+.tb-re{font-family:var(--serif);font-size:1.25rem;color:var(--gold2);font-style:italic}
+.tb-treat{font-family:var(--serif);font-size:1.25rem;color:var(--white)}
+.tb-nav{display:flex;gap:2px;flex:1}
+.tnav{padding:7px 13px;background:none;border:none;color:rgba(255,255,255,.4);font-size:.72rem;font-weight:600;cursor:pointer;letter-spacing:.7px;text-transform:uppercase;border-radius:var(--r);transition:.2s;font-family:var(--sans)}
+.tnav:hover{color:rgba(255,255,255,.75)}
+.tnav.active{color:var(--gold2);background:rgba(255,255,255,.06)}
+.tb-right{display:flex;align-items:center;gap:10px;margin-left:auto}
+.tb-notif{background:none;border:none;cursor:pointer;color:rgba(255,255,255,.4);font-size:.72rem;font-weight:600;letter-spacing:.5px;text-transform:uppercase;position:relative;padding:4px 8px;font-family:var(--sans)}
+.tb-notif:hover{color:var(--gold2)}
+.nb{position:absolute;top:0;right:0;background:var(--red);color:#fff;border-radius:50%;width:14px;height:14px;font-size:.52rem;display:flex;align-items:center;justify-content:center;font-weight:700}
+.tb-user{display:flex;align-items:center;gap:7px;cursor:pointer;padding:4px 8px;border-radius:var(--r);transition:.2s}
+.tb-user:hover{background:rgba(255,255,255,.06)}
+.tb-avatar{width:27px;height:27px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;color:var(--ink);font-size:.72rem;font-weight:700;flex-shrink:0;overflow:hidden}
+.tb-avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.tb-uname{color:rgba(255,255,255,.55);font-size:.72rem;font-weight:600;font-family:var(--sans)}
+.app-layout{display:flex;flex:1;min-height:0}
+
+/* SIDEBAR */
+.sidebar{width:196px;background:var(--white);border-right:1px solid var(--border2);flex-shrink:0;padding:14px 0;overflow-y:auto}
+.sb-sect{margin-bottom:6px}
+.sb-lbl{font-size:.6rem;font-weight:700;color:var(--ink4);text-transform:uppercase;letter-spacing:1.2px;padding:0 14px;margin-bottom:5px;margin-top:14px;display:block}
+.sb-item{display:flex;align-items:center;justify-content:space-between;padding:7px 14px;cursor:pointer;color:var(--ink3);font-size:.76rem;font-weight:600;transition:.15s;background:none;border:none;width:100%;text-align:left;font-family:var(--sans)}
+.sb-item:hover{background:var(--paper2);color:var(--ink)}
+.sb-item.active{background:var(--gold3);color:var(--gold)}
+.sb-item .sb-ico{width:14px;text-align:center;flex-shrink:0;margin-right:7px;font-size:12px}
+.sb-badge{background:var(--paper2);color:var(--ink3);border-radius:20px;padding:1px 6px;font-size:.62rem;font-weight:700}
+.sb-item.active .sb-badge{background:var(--gold);color:var(--white)}
+.sb-divider{height:1px;background:var(--border2);margin:7px 14px}
+.sb-stats{margin:10px 14px 14px;background:var(--paper);border:1px solid var(--border2);border-radius:var(--r2);padding:10px}
+.sb-stat-row{display:flex;justify-content:space-between;align-items:center;padding:3px 0;border-bottom:1px solid var(--border2)}
+.sb-stat-row:last-child{border-bottom:none}
+.ssr-lbl{font-size:.66rem;color:var(--ink4)}
+.ssr-val{font-size:.74rem;font-weight:700;color:var(--ink)}
+
+/* SHARE LINK PANEL in sidebar */
+.sb-share{margin:10px 14px;background:var(--sdg-light);border:1px solid rgba(63,126,68,.2);border-radius:var(--r2);padding:10px}
+.sb-share-lbl{font-size:.6rem;font-weight:700;color:var(--sdg-green);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
+.sb-share-desc{font-size:.7rem;color:var(--ink3);line-height:1.5;margin-bottom:8px}
+.sb-share-btn{width:100%;padding:7px;background:var(--sdg-green);color:#fff;border:none;border-radius:var(--r);font-size:.7rem;font-weight:700;cursor:pointer;font-family:var(--sans);letter-spacing:.5px;transition:.2s}
+.sb-share-btn:hover{filter:brightness(1.1)}
+
+/* MAIN */
+.main{flex:1;overflow-y:auto;background:var(--paper)}
+.pg{display:none;padding:22px}.pg.active{display:block}
+.pg-hdr{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid var(--border2)}
+.pg-hdr-left h2{font-family:var(--serif);font-size:1.35rem;color:var(--ink);font-weight:normal;letter-spacing:.4px}
+.pg-hdr-left p{font-size:.72rem;color:var(--ink4);margin-top:3px}
+.btn-outline{padding:7px 14px;background:none;border:1px solid var(--border);border-radius:var(--r);font-size:.7rem;font-weight:700;color:var(--ink2);cursor:pointer;letter-spacing:.7px;text-transform:uppercase;font-family:var(--sans);transition:.2s}
+.btn-outline:hover{border-color:var(--ink);background:var(--paper2)}
+.btn-solid{padding:7px 14px;background:var(--ink);border:1px solid var(--ink);border-radius:var(--r);font-size:.7rem;font-weight:700;color:var(--gold2);cursor:pointer;letter-spacing:.7px;text-transform:uppercase;font-family:var(--sans);transition:.2s}
+.btn-solid:hover{background:var(--ink2)}
+.btn-green{padding:7px 14px;background:var(--sdg-green);border:none;border-radius:var(--r);font-size:.7rem;font-weight:700;color:#fff;cursor:pointer;letter-spacing:.7px;text-transform:uppercase;font-family:var(--sans);transition:.2s}
+.btn-green:hover{filter:brightness(1.1)}
+
+/* STATS */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px}
+.stat-card{background:var(--white);border:1px solid var(--border2);border-radius:var(--r2);padding:13px 14px}
+.stat-card .sc-num{font-family:var(--serif);font-size:1.7rem;color:var(--ink);line-height:1}
+.stat-card .sc-lbl{font-size:.63rem;font-weight:700;color:var(--ink4);text-transform:uppercase;letter-spacing:.8px;margin-top:3px}
+.stat-card .sc-sub{font-size:.68rem;color:var(--ink4);margin-top:2px}
+
+/* SEARCH */
+.search-row{display:flex;gap:8px;margin-bottom:14px}
+.search-box{flex:1;display:flex;align-items:center;gap:8px;padding:8px 12px;border:1px solid var(--border);border-radius:var(--r);background:var(--white)}
+.search-box input{flex:1;border:none;outline:none;font-size:.8rem;font-family:var(--sans);color:var(--ink);background:transparent}
+
+/* FILTER TABS */
+.f-tabs{display:flex;gap:5px;margin-bottom:14px;flex-wrap:wrap}
+.ftab{padding:5px 12px;border:1px solid var(--border);border-radius:20px;background:var(--white);font-size:.7rem;font-weight:700;color:var(--ink3);cursor:pointer;transition:.2s;font-family:var(--sans);letter-spacing:.3px}
+.ftab:hover{border-color:var(--ink3)}
+.ftab.active{background:var(--ink);border-color:var(--ink);color:var(--gold2)}
+
+/* TABLE */
+.med-table-wrap{background:var(--white);border:1px solid var(--border2);border-radius:var(--r2);overflow:hidden}
+.med-table{width:100%;border-collapse:collapse}
+.med-table thead tr{background:var(--paper);border-bottom:1px solid var(--border2)}
+.med-table th{padding:9px 13px;font-size:.63rem;font-weight:700;color:var(--ink4);text-transform:uppercase;letter-spacing:1px;text-align:left;white-space:nowrap}
+.med-table td{padding:10px 13px;border-bottom:1px solid var(--border2);font-size:.78rem;color:var(--ink);vertical-align:middle}
+.med-table tbody tr:last-child td{border-bottom:none}
+.med-table tbody tr{cursor:pointer;transition:.12s}
+.med-table tbody tr:hover td{background:var(--paper2)}
+.med-name-cell{display:flex;flex-direction:column;gap:2px}
+.med-nm{font-weight:700;font-size:.8rem;color:var(--ink)}
+.med-cat{font-size:.68rem;color:var(--ink4)}
+.tag{display:inline-block;padding:2px 7px;border-radius:3px;font-size:.62rem;font-weight:700;letter-spacing:.3px;white-space:nowrap}
+.tag-free{background:var(--teal2);color:var(--teal)}
+.tag-paid{background:var(--gold3);color:var(--gold)}
+.tag-pharm{background:var(--blue2);color:var(--blue)}
+.tag-home{background:var(--paper2);color:var(--ink2)}
+.tag-shared{background:#e8f4ea;color:var(--sdg-green)}
+.price-free{color:var(--teal);font-weight:700}
+.price-paid{color:var(--gold);font-weight:700}
+.loc-cell{color:var(--ink4);font-size:.73rem}
+.dist-pill{display:inline-block;background:var(--paper2);color:var(--ink3);padding:2px 6px;border-radius:3px;font-size:.66rem;font-weight:600;margin-left:4px}
+.qty-cell{font-weight:700;color:var(--ink2)}
+.action-btn{padding:4px 10px;background:var(--ink);color:var(--gold2);border:none;border-radius:var(--r);font-size:.65rem;font-weight:700;cursor:pointer;letter-spacing:.4px;text-transform:uppercase;font-family:var(--sans);transition:.2s}
+.action-btn:hover{background:var(--ink2)}
+.empty-row td{text-align:center;padding:36px;color:var(--ink4);font-size:.8rem}
+
+/* DISCLAIMER BANNER */
+.disclaimer-banner{
+  background:var(--red2);border:1px solid rgba(139,32,32,.18);
+  border-radius:var(--r);padding:10px 14px;margin-bottom:16px;
+  display:flex;gap:10px;align-items:flex-start;
+}
+.db-icon{font-size:.9rem;flex-shrink:0;margin-top:1px}
+.db-text{font-size:.73rem;color:var(--red);line-height:1.6}
+.db-text strong{font-weight:700}
+
+/* FORM */
+.form-wrap{max-width:580px}
+.form-card{background:var(--white);border:1px solid var(--border2);border-radius:var(--r2);overflow:hidden;margin-bottom:14px}
+.fc-hdr{padding:12px 18px;border-bottom:1px solid var(--border2);display:flex;align-items:center;gap:10px}
+.fc-hdr-dot{display:flex;gap:4px}
+.fd{width:9px;height:9px;border-radius:50%}
+.fd-r{background:#e05c5c}.fd-y{background:#e0b84a}.fd-g{background:#4cba6e}
+.fc-title{font-size:.7rem;font-weight:700;color:var(--ink4);text-transform:uppercase;letter-spacing:1px}
+.fc-body{padding:18px}
+.fr{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.fgrp{margin-bottom:12px}
+.fgrp label{display:block;font-size:.66rem;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:5px}
+.fgrp input,.fgrp select,.fgrp textarea{width:100%;padding:8px 11px;border:1px solid var(--border);border-radius:var(--r);font-size:.8rem;font-family:var(--sans);color:var(--ink);background:var(--paper);outline:none;transition:.2s}
+.fgrp input:focus,.fgrp select:focus,.fgrp textarea:focus{border-color:var(--gold);background:var(--white)}
+.radio-row{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.ropt{padding:8px 11px;border:1px solid var(--border);border-radius:var(--r);cursor:pointer;font-size:.73rem;font-weight:700;color:var(--ink3);transition:.2s;text-align:center;font-family:var(--sans)}
+.ropt:hover{border-color:var(--ink3)}
+.ropt.sel{border-color:var(--ink);background:var(--ink);color:var(--gold2)}
+.form-footer{padding:12px 18px;background:var(--paper);border-top:1px solid var(--border2);display:flex;gap:8px;align-items:center}
+.submit-btn{padding:9px 22px;background:var(--ink);color:var(--gold2);border:none;border-radius:var(--r);font-size:.73rem;font-weight:700;cursor:pointer;letter-spacing:1px;text-transform:uppercase;font-family:var(--sans);transition:.2s}
+.submit-btn:hover{background:var(--ink2)}
+.cancel-btn{padding:9px 16px;background:none;border:1px solid var(--border);border-radius:var(--r);font-size:.73rem;font-weight:700;cursor:pointer;color:var(--ink3);font-family:var(--sans);transition:.2s}
+.cancel-btn:hover{border-color:var(--ink3)}
+
+/* MAP */
+.map-card{background:var(--white);border:1px solid var(--border2);border-radius:var(--r2);overflow:hidden}
+.map-canvas{position:relative;height:340px;overflow:hidden}
+#leaflet-map{width:100%;height:100%}
+.map-legend{display:flex;gap:14px;padding:9px 14px;border-bottom:1px solid var(--border2)}
+.leg-item{display:flex;align-items:center;gap:5px;font-size:.68rem;color:var(--ink3)}
+.leg-dot{width:8px;height:8px;border-radius:50%;border:1.5px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+
+/* PROFILE */
+.profile-hero{background:var(--ink);padding:24px 22px;display:flex;align-items:center;gap:14px;border-bottom:1px solid rgba(255,255,255,.07)}
+.ph-avatar{width:52px;height:52px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;color:var(--ink);font-size:1.1rem;font-weight:700;flex-shrink:0;overflow:hidden}
+.ph-avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.ph-name{font-family:var(--serif);font-size:1.15rem;color:var(--white);letter-spacing:.4px}
+.ph-email{font-size:.72rem;color:rgba(255,255,255,.4);margin-top:2px}
+.ph-method{display:inline-block;margin-top:5px;background:rgba(255,255,255,.08);color:rgba(255,255,255,.45);padding:2px 7px;border-radius:3px;font-size:.62rem;font-weight:700;letter-spacing:.5px;text-transform:uppercase}
+.profile-stats{display:grid;grid-template-columns:repeat(3,1fr);border-bottom:1px solid var(--border2)}
+.pstat{padding:14px;text-align:center;border-right:1px solid var(--border2)}
+.pstat:last-child{border-right:none}
+.pstat .ps-num{font-family:var(--serif);font-size:1.5rem;color:var(--ink)}
+.pstat .ps-lbl{font-size:.62rem;color:var(--ink4);text-transform:uppercase;letter-spacing:.8px;margin-top:2px}
+.profile-info{padding:14px 18px}
+.pi-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border2);font-size:.76rem}
+.pi-row:last-of-type{border-bottom:none}
+.pi-lbl{color:var(--ink4);font-weight:700;text-transform:uppercase;letter-spacing:.5px;font-size:.62rem}
+.pi-val{color:var(--ink)}
+.logout-btn{width:100%;padding:9px;background:none;border:1px solid rgba(139,32,32,.4);color:var(--red);border-radius:var(--r);font-size:.73rem;font-weight:700;cursor:pointer;letter-spacing:.8px;text-transform:uppercase;font-family:var(--sans);transition:.2s;margin-top:14px}
+.logout-btn:hover{background:var(--red);color:var(--white)}
+
+/* MODAL */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:700;display:none;align-items:center;justify-content:center;padding:20px}
+.modal-bg.open{display:flex}
+.modal-box{background:var(--white);border-radius:var(--r2);max-width:460px;width:100%;overflow:hidden;box-shadow:0 24px 64px rgba(0,0,0,.3);animation:mslide .22s ease}
+@keyframes mslide{from{transform:translateY(14px);opacity:0}to{transform:translateY(0);opacity:1}}
+.modal-hdr{background:var(--ink);padding:13px 18px;display:flex;align-items:center;justify-content:space-between}
+.modal-hdr-dots{display:flex;gap:4px}
+.modal-hdr-title{font-size:.68rem;font-weight:700;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:1px}
+.modal-close{background:none;border:none;color:rgba(255,255,255,.4);cursor:pointer;font-size:.95rem;line-height:1;padding:2px 6px;transition:.2s}
+.modal-close:hover{color:var(--white)}
+.modal-body{padding:18px}
+.modal-body h3{font-family:var(--serif);font-size:1.1rem;color:var(--ink);margin-bottom:8px;font-weight:normal}
+.modal-pills{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px}
+.modal-info-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:14px}
+.mig-item{background:var(--paper);border:1px solid var(--border2);border-radius:var(--r);padding:9px 11px}
+.mig-lbl{font-size:.6rem;font-weight:700;color:var(--ink4);text-transform:uppercase;letter-spacing:.8px;margin-bottom:3px}
+.mig-val{font-size:.8rem;font-weight:700;color:var(--ink)}
+.modal-notes{font-size:.76rem;color:var(--ink3);line-height:1.7;padding:9px 11px;background:var(--paper);border-radius:var(--r);margin-bottom:14px;font-style:italic}
+.modal-contact-bar{display:flex;align-items:center;justify-content:space-between;padding:9px 11px;background:var(--gold3);border-radius:var(--r);margin-bottom:14px;font-size:.76rem}
+.mcb-left{color:var(--gold);font-weight:700}
+.mcb-right{color:var(--ink2)}
+.phone-field{margin-bottom:12px}
+.phone-field label{display:block;font-size:.66rem;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:5px}
+.phone-field input{width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:var(--r);font-size:.82rem;font-family:var(--sans);outline:none;transition:.2s;background:var(--paper)}
+.phone-field input:focus{border-color:var(--gold)}
+.modal-acts{display:flex;gap:7px}
+.btn-request{flex:1;padding:9px;background:var(--ink);color:var(--gold2);border:none;border-radius:var(--r);font-size:.73rem;font-weight:700;cursor:pointer;letter-spacing:.7px;text-transform:uppercase;font-family:var(--sans);transition:.2s}
+.btn-request:hover{background:var(--ink2)}
+.btn-cancel{padding:9px 14px;background:none;border:1px solid var(--border);border-radius:var(--r);font-size:.73rem;font-weight:700;cursor:pointer;color:var(--ink3);font-family:var(--sans);transition:.2s}
+.btn-cancel:hover{border-color:var(--ink3)}
+
+/* TOAST */
+#toast{position:fixed;bottom:20px;right:22px;background:var(--ink);color:var(--gold2);padding:10px 16px;border-radius:var(--r);font-size:.73rem;font-weight:700;font-family:var(--sans);letter-spacing:.3px;z-index:9999;opacity:0;transform:translateY(6px);transition:.3s;pointer-events:none;border-left:3px solid var(--gold)}
+#toast.show{opacity:1;transform:translateY(0)}
+
+/* Leaflet overrides */
+.leaflet-container{font-family:var(--sans)}
+
+/* ───────────── ACCEPTANCE MODAL ───────────── */
+#accept-bg{
+  position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:800;
+  display:none;align-items:center;justify-content:center;padding:20px;
+}
+#accept-bg.open{display:flex}
+.accept-box{
+  background:var(--white);border-radius:var(--r2);
+  max-width:500px;width:100%;overflow:hidden;
+  box-shadow:0 28px 72px rgba(0,0,0,.4);
+  animation:mslide .25s ease;
+}
+.accept-hdr{
+  background:var(--red);padding:18px 22px;
+  display:flex;align-items:center;gap:12px;
+}
+.accept-hdr-icon{font-size:1.6rem;flex-shrink:0}
+.accept-hdr-text h3{font-family:var(--serif);font-size:1.1rem;color:#fff;font-weight:normal;letter-spacing:.3px}
+.accept-hdr-text p{font-size:.68rem;color:rgba(255,255,255,.6);margin-top:2px}
+.accept-body{padding:22px}
+.accept-drug-row{
+  display:flex;align-items:center;gap:12px;
+  background:var(--paper);border:1px solid var(--border2);
+  border-radius:var(--r);padding:12px 14px;margin-bottom:18px;
+}
+.accept-drug-icon{font-size:1.5rem}
+.accept-drug-name{font-family:var(--serif);font-size:1rem;color:var(--ink);font-weight:normal}
+.accept-drug-sub{font-size:.7rem;color:var(--ink4);margin-top:2px}
+.accept-title{font-size:.72rem;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px}
+.accept-terms{
+  background:var(--red2);border:1px solid rgba(139,32,32,.18);
+  border-radius:var(--r);padding:14px 16px;margin-bottom:16px;
+}
+.accept-term{
+  display:flex;align-items:flex-start;gap:10px;
+  padding:8px 0;border-bottom:1px solid rgba(139,32,32,.1);
+  font-size:.76rem;color:var(--ink2);line-height:1.55;
+}
+.accept-term:last-child{border-bottom:none;padding-bottom:0}
+.accept-term-num{
+  width:20px;height:20px;border-radius:50%;
+  background:var(--red);color:#fff;
+  font-size:.62rem;font-weight:700;
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;margin-top:1px;
+}
+.accept-checks{margin-bottom:16px;display:flex;flex-direction:column;gap:8px}
+.accept-check-row{
+  display:flex;align-items:flex-start;gap:10px;
+  padding:8px 10px;border:1px solid var(--border);
+  border-radius:var(--r);cursor:pointer;transition:.2s;
+  background:var(--white);
+}
+.accept-check-row:hover{border-color:var(--ink3);background:var(--paper)}
+.accept-check-row.checked{border-color:var(--sdg-green);background:var(--sdg-light)}
+.accept-check-box{
+  width:16px;height:16px;border-radius:3px;border:2px solid var(--border);
+  flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center;
+  transition:.2s;font-size:.65rem;color:#fff;background:#fff;
+}
+.accept-check-row.checked .accept-check-box{background:var(--sdg-green);border-color:var(--sdg-green)}
+.accept-check-label{font-size:.74rem;color:var(--ink2);line-height:1.5}
+.accept-check-label strong{font-weight:700;color:var(--ink)}
+.accept-phone-row{margin-bottom:16px}
+.accept-phone-row label{display:block;font-size:.66rem;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:5px}
+.accept-phone-row input{width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:var(--r);font-size:.84rem;font-family:var(--sans);outline:none;transition:.2s;background:var(--paper)}
+.accept-phone-row input:focus{border-color:var(--sdg-green);background:var(--white)}
+.accept-acts{display:flex;gap:8px}
+.btn-accept{
+  flex:1;padding:11px;border:none;border-radius:var(--r);
+  font-size:.76rem;font-weight:700;cursor:pointer;
+  letter-spacing:.8px;text-transform:uppercase;font-family:var(--sans);
+  transition:.2s;background:#ccc;color:#fff;
+}
+.btn-accept.ready{background:var(--sdg-green);color:#fff}
+.btn-accept.ready:hover{filter:brightness(1.1)}
+.btn-accept-cancel{
+  padding:11px 16px;background:none;border:1px solid var(--border);
+  border-radius:var(--r);font-size:.76rem;font-weight:700;
+  cursor:pointer;color:var(--ink3);font-family:var(--sans);transition:.2s;
+}
+.btn-accept-cancel:hover{border-color:var(--ink3)}
+/* Success flash */
+.accept-success{
+  display:none;flex-direction:column;align-items:center;
+  justify-content:center;padding:32px 22px;text-align:center;gap:10px;
+}
+.accept-success-icon{font-size:3rem;animation:bounceIn .4s ease}
+@keyframes bounceIn{0%{transform:scale(.3)}60%{transform:scale(1.15)}100%{transform:scale(1)}}
+.accept-success h3{font-family:var(--serif);font-size:1.2rem;color:var(--sdg-green);font-weight:normal}
+.accept-success p{font-size:.76rem;color:var(--ink3);line-height:1.6;max-width:300px}
+
+@media(max-width:780px){
+  .auth-wrap{grid-template-columns:1fr}.auth-panel{display:none}.auth-form-panel{border-radius:var(--r3)}
+  .sidebar{display:none}.stats-row{grid-template-columns:1fr 1fr}
+  .tb-nav{display:none}
+}
+</style>
+</head>
+<body>
+
+<!-- ── SDG SPLASH ── -->
+<div id="sdg-splash">
+  <div class="sdg-wheel">
+    <div class="sdg-inner">
+      <span class="sdg-num">3</span>
+      <span class="sdg-small">SDG</span>
+    </div>
+  </div>
+  <div class="sdg-title">Good Health &amp; Well-Being</div>
+  <div class="sdg-sub">Ensuring healthy lives and promoting well-being for all at all ages — through community medicine sharing.</div>
+  <div class="sdg-brand">
+    <span class="sdg-re">Re</span><span class="sdg-treat">Treat</span>
+  </div>
+  <div class="sdg-tag">Medicine Sharing Platform</div>
+  <div class="sdg-progress"><div class="sdg-bar"></div></div>
+</div>
+
+<!-- ── SHARED SUBMIT SCREEN ── -->
+<div id="shared-screen">
+  <div class="shared-wrap">
+    <div class="shared-hdr">
+      <div class="shared-hdr-icon">💊</div>
+      <div>
+        <h2>Add a Medicine Listing</h2>
+        <p>Someone shared this link so you can donate or list a medicine</p>
+      </div>
+    </div>
+    <div class="disclaimer-box">
+      <span class="disc-icon">⚠️</span>
+      <div class="disc-text">
+        <strong>Disclaimer:</strong> ReTreat is a community platform only. We are <strong>not responsible</strong> for the safety, efficacy, or condition of any listed medicine. Always consult a qualified pharmacist or physician before using any medication. We do not verify drug quality.
+      </div>
+    </div>
+    <div class="shared-form">
+      <div class="fgrp"><label>Your Name</label><input type="text" id="sh-name" placeholder="Full name"></div>
+      <div class="fgrp"><label>Phone</label><input type="tel" id="sh-phone" placeholder="+20 10x xxxx xxxx"></div>
+      <div class="fgrp"><label>Medicine Name</label><input type="text" id="sh-mname" placeholder="e.g. Paracetamol 500mg"></div>
+      <div class="fr">
+        <div class="fgrp"><label>Category</label>
+          <select id="sh-cat"><option>Painkillers</option><option>Antibiotics</option><option>Blood Pressure</option><option>Diabetes</option><option>Vitamins</option><option>Heart</option><option>Digestive</option><option>Respiratory</option><option>Other</option></select>
+        </div>
+        <div class="fgrp"><label>Quantity</label><input type="number" id="sh-qty" placeholder="Units" min="1"></div>
+      </div>
+      <div class="fgrp"><label>Expiry Date</label><input type="date" id="sh-exp"></div>
+      <div class="fgrp"><label>Notes (optional)</label><textarea id="sh-notes" rows="2" placeholder="Condition, packaging details..."></textarea></div>
+      <div class="radio-row" style="margin-bottom:14px">
+        <div class="ropt sel" id="sh-free" onclick="shSelPrice('free')">Free Donation</div>
+        <div class="ropt" id="sh-paid" onclick="shSelPrice('paid')">Nominal Price</div>
+      </div>
+      <div class="fgrp" id="sh-price-fld" style="display:none"><label>Price (EGP)</label><input type="number" id="sh-price" placeholder="0"></div>
+      <button class="submit-btn" style="width:100%;margin-top:4px" onclick="submitShared()">Submit Listing</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── AUTH ── -->
+<div id="auth-screen">
+  <div class="auth-wrap">
+    <div class="auth-panel">
+      <div class="ap-sdg">
+        <div class="ap-sdg-num">3</div>
+        <div class="ap-sdg-text"><strong>UN SDG Goal 3</strong><br>Good Health &amp; Well-Being — we connect surplus medicines with those who need them.</div>
+      </div>
+      <div>
+        <div class="ap-logo">
+          <div><span class="ap-re">Re</span><span class="ap-treat">Treat</span></div>
+          <div class="ap-tag">Medicine Sharing Platform</div>
+        </div>
+        <div class="ap-line"></div>
+        <div class="ap-desc">Connect surplus medicines — from pharmacies and households — with those who need them. Free for those in need, nominal cost for others.</div>
+        <div class="ap-feat"><span class="ap-feat-dot"></span>Locate nearby medicines instantly</div>
+        <div class="ap-feat"><span class="ap-feat-dot"></span>Free listings for those in need</div>
+        <div class="ap-feat"><span class="ap-feat-dot"></span>Verified pharmacies &amp; donors</div>
+        <div class="ap-feat"><span class="ap-feat-dot"></span>Shareable submission links</div>
+      </div>
+      <div class="ap-share-link">
+        <div class="ap-share-lbl">Share Submission Link</div>
+        <div class="ap-share-url" id="ap-share-url">Loading...</div>
+        <button class="copy-link-btn" onclick="copyShareLink()">📋 Copy Link</button>
+      </div>
+      <div style="font-size:.62rem;color:rgba(255,255,255,.18);font-family:var(--sans);letter-spacing:.5px;margin-top:16px">&copy; 2025 ReTreat · SDG 3</div>
+    </div>
+    <div class="auth-form-panel">
+      <div class="atabs">
+        <button class="atab active" onclick="switchAuth('login')">Sign In</button>
+        <button class="atab" onclick="switchAuth('register')">Register</button>
+      </div>
+      <div class="soc-row">
+        <!-- Google Sign-In -->
+        <div id="g_id_onload" data-client_id="YOUR_GOOGLE_CLIENT_ID" data-callback="onGoogleSignIn" data-auto_prompt="false"></div>
+        <button class="soc-btn" id="btn-google" onclick="triggerGoogleSignIn()">
+          <svg viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20H24v8h11.3C33.5 32.5 29.2 35 24 35c-6.1 0-11-4.9-11-11s4.9-11 11-11c2.8 0 5.3 1 7.2 2.7l5.7-5.7C33.6 7 29 5 24 5 13.5 5 5 13.5 5 24s8.5 19 19 19c9.8 0 18.3-7 19.7-16.4.1-.8.2-1.7.2-2.6 0-.7 0-1.3-.3-4z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.5 16 19 13 24 13c2.8 0 5.3 1 7.2 2.7l5.7-5.7C33.6 7 29 5 24 5 16.3 5 9.7 9.1 6.3 14.7z"/><path fill="#4CAF50" d="M24 43c5.2 0 9.8-2 13.3-5.1l-6.2-5.1C29.3 34.6 26.8 35.5 24 35.5c-5.2 0-9.5-3.5-11.1-8.2l-6.5 5C9.5 39 16.3 43 24 43z"/><path fill="#1976D2" d="M43.6 20H24v8h11.3c-.9 2.4-2.5 4.4-4.5 5.8l6.2 5.1C40.8 35.5 44 30.2 44 24c0-.7 0-1.3-.4-4z"/></svg>
+          Continue with Google
+        </button>
+        <!-- Facebook Login -->
+        <button class="soc-btn" id="btn-facebook" onclick="triggerFacebookSignIn()">
+          <svg viewBox="0 0 48 48"><path fill="#1877F2" d="M48 24C48 10.7 37.3 0 24 0S0 10.7 0 24c0 12 8.8 21.9 20.3 23.7V31h-6v-7h6v-5.3c0-6 3.6-9.3 9-9.3 2.6 0 5.4.5 5.4.5v5.9h-3c-3 0-3.9 1.9-3.9 3.8V24h6.6l-1 7h-5.6v16.7C39.2 45.9 48 36 48 24z"/></svg>
+          Continue with Facebook
+        </button>
+        <!-- Apple Sign In -->
+        <button class="soc-btn" id="btn-apple" onclick="triggerAppleSignIn()">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.7 12.4c0-2.8 2.3-4.2 2.4-4.3-1.3-1.9-3.3-2.1-4-2.2-1.7-.2-3.3 1-4.2 1s-2.2-1-3.6-1c-1.9 0-3.6 1.1-4.6 2.8-2 3.4-.5 8.4 1.4 11.2.9 1.4 2 2.9 3.5 2.8 1.4-.1 1.9-.9 3.6-.9s2.2.9 3.7.9c1.5 0 2.5-1.4 3.4-2.8.7-1 1.3-2.1 1.5-3.3-3.4-1.2-3.1-5.7-3.1-6.2zM16.1 4.1c.8-1 1.3-2.3 1.1-3.7-1.1.1-2.5.8-3.3 1.8-.7.8-1.3 2.1-1.1 3.4 1.2.1 2.5-.6 3.3-1.5z"/></svg>
+          Continue with Apple
+        </button>
+      </div>
+      <div class="or-div">or</div>
+      <div id="login-form">
+        <div class="fg"><label>Email Address</label><input type="email" id="auth-email" placeholder="your@email.com"></div>
+        <div class="fg"><label>Password</label><input type="password" id="auth-pass" placeholder="••••••••"></div>
+        <button class="btn-main" onclick="emailLogin()">Sign In</button>
+      </div>
+      <div id="register-form" style="display:none">
+        <div class="fg"><label>Full Name</label><input type="text" id="reg-name" placeholder="Your full name"></div>
+        <div class="fg"><label>Email Address</label><input type="email" id="reg-email" placeholder="your@email.com"></div>
+        <div class="fg"><label>Phone Number</label><input type="tel" id="reg-phone" placeholder="+20 10x xxxx xxxx"></div>
+        <div class="fg"><label>Password</label><input type="password" id="reg-pass" placeholder="••••••••"></div>
+        <button class="btn-main" onclick="register()">Create Account</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── APP ── -->
+<div id="app">
+  <div class="topbar">
+    <div class="tb-logo"><span class="tb-re">Re</span><span class="tb-treat">Treat</span></div>
+    <div class="tb-nav">
+      <button class="tnav active" id="tn-home" onclick="goPage('home');setNav(this)">Dashboard</button>
+      <button class="tnav" id="tn-add" onclick="goPage('add');setNav(this)">Add Listing</button>
+      <button class="tnav" id="tn-map" onclick="goPage('map');setNav(this)">Nearby Map</button>
+      <button class="tnav" id="tn-profile" onclick="goPage('profile');setNav(this)">Account</button>
+    </div>
+    <div class="tb-right">
+      <button class="tb-notif" onclick="showToast('3 new requests pending')">Notifications <span class="nb" id="notif-count">3</span></button>
+      <div class="tb-user" onclick="goPage('profile');setNav(document.getElementById('tn-profile'))">
+        <div class="tb-avatar" id="tb-av">R</div>
+        <span class="tb-uname" id="tb-uname">User</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="app-layout">
+    <div class="sidebar">
+      <span class="sb-lbl">Availability</span>
+      <button class="sb-item active" id="si-all" onclick="sideFilter('all',this)">
+        <span class="sb-ico">◻</span> All Medicines <span class="sb-badge" id="sbb-all">0</span>
+      </button>
+      <button class="sb-item" id="si-free" onclick="sideFilter('free',this)">
+        <span class="sb-ico">✓</span> Free Only <span class="sb-badge" id="sbb-free">0</span>
+      </button>
+      <button class="sb-item" id="si-paid" onclick="sideFilter('paid',this)">
+        <span class="sb-ico">$</span> Low Cost <span class="sb-badge" id="sbb-paid">0</span>
+      </button>
+      <div class="sb-divider"></div>
+      <span class="sb-lbl">Source</span>
+      <button class="sb-item" id="si-pharmacy" onclick="sideFilter('pharmacy',this)">
+        <span class="sb-ico">+</span> Pharmacies <span class="sb-badge" id="sbb-pharm">0</span>
+      </button>
+      <button class="sb-item" id="si-home" onclick="sideFilter('home',this)">
+        <span class="sb-ico">⌂</span> From Homes <span class="sb-badge" id="sbb-home">0</span>
+      </button>
+      <div class="sb-divider"></div>
+      <span class="sb-lbl">Category</span>
+      <button class="sb-item" onclick="filterCat('Painkillers')"><span class="sb-ico">•</span>Painkillers</button>
+      <button class="sb-item" onclick="filterCat('Antibiotics')"><span class="sb-ico">•</span>Antibiotics</button>
+      <button class="sb-item" onclick="filterCat('Heart')"><span class="sb-ico">•</span>Heart</button>
+      <button class="sb-item" onclick="filterCat('Vitamins')"><span class="sb-ico">•</span>Vitamins</button>
+      <button class="sb-item" onclick="filterCat('Diabetes')"><span class="sb-ico">•</span>Diabetes</button>
+      <button class="sb-item" onclick="filterCat('Respiratory')"><span class="sb-ico">•</span>Respiratory</button>
+      <div class="sb-divider"></div>
+      <div class="sb-stats">
+        <div class="sb-stat-row"><span class="ssr-lbl">Total</span><span class="ssr-val" id="ss-total">0</span></div>
+        <div class="sb-stat-row"><span class="ssr-lbl">Free</span><span class="ssr-val" id="ss-free">0</span></div>
+        <div class="sb-stat-row"><span class="ssr-lbl">Pharmacies</span><span class="ssr-val" id="ss-pharm">0</span></div>
+        <div class="sb-stat-row"><span class="ssr-lbl">Home Donors</span><span class="ssr-val" id="ss-home">0</span></div>
+      </div>
+      <div class="sb-share">
+        <div class="sb-share-lbl">📤 Share Link</div>
+        <div class="sb-share-desc">Let anyone add a drug listing without signing in.</div>
+        <button class="sb-share-btn" onclick="copyShareLink()">Copy Submission Link</button>
+      </div>
+    </div>
+
+    <div class="main">
+
+      <!-- HOME -->
+      <div id="pg-home" class="pg active">
+        <div class="pg-hdr">
+          <div class="pg-hdr-left">
+            <h2>Available Medicines</h2>
+            <p>Surplus medicines from pharmacies &amp; households — browse and request</p>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn-green" onclick="copyShareLink()">📤 Share Link</button>
+            <button class="btn-solid" onclick="requestLocation()">📍 Locate Me</button>
+          </div>
+        </div>
+        <div class="disclaimer-banner">
+          <span class="db-icon">⚠️</span>
+          <div class="db-text">
+            <strong>Important:</strong> ReTreat is a community sharing platform. We are <strong>not responsible</strong> for the safety, quality, or suitability of any listed medicine. Always verify with a licensed pharmacist before use.
+          </div>
+        </div>
+        <div class="stats-row">
+          <div class="stat-card"><div class="sc-num" id="sc-total">0</div><div class="sc-lbl">Available</div><div class="sc-sub">All listings</div></div>
+          <div class="stat-card"><div class="sc-num" id="sc-free">0</div><div class="sc-lbl">Free</div><div class="sc-sub">No cost</div></div>
+          <div class="stat-card"><div class="sc-num" id="sc-pharm">0</div><div class="sc-lbl">Pharmacies</div><div class="sc-sub">Verified</div></div>
+          <div class="stat-card"><div class="sc-num" id="sc-home">0</div><div class="sc-lbl">Households</div><div class="sc-sub">Donors</div></div>
+        </div>
+        <div class="search-row">
+          <div class="search-box">
+            <span>🔍</span>
+            <input placeholder="Search by medicine name, category, location..." id="search-inp" oninput="filterMeds()">
+          </div>
+        </div>
+        <div class="f-tabs">
+          <button class="ftab active" onclick="filterTab('all',this)">All</button>
+          <button class="ftab" onclick="filterTab('free',this)">Free Only</button>
+          <button class="ftab" onclick="filterTab('paid',this)">Low Cost</button>
+          <button class="ftab" onclick="filterTab('pharmacy',this)">Pharmacies</button>
+          <button class="ftab" onclick="filterTab('home',this)">From Home</button>
+          <button class="ftab" onclick="filterTab('shared',this)">Via Link 🔗</button>
+        </div>
+        <div class="med-table-wrap">
+          <table class="med-table">
+            <thead><tr><th>Medicine</th><th>Source</th><th>Price</th><th>Qty</th><th>Location</th><th>Expiry</th><th></th></tr></thead>
+            <tbody id="med-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ADD -->
+      <div id="pg-add" class="pg">
+        <div class="pg-hdr">
+          <div class="pg-hdr-left"><h2>New Listing</h2><p>Share a surplus medicine with your community</p></div>
+        </div>
+        <div class="disclaimer-banner">
+          <span class="db-icon">⚠️</span>
+          <div class="db-text">
+            <strong>Disclaimer:</strong> By submitting, you confirm you own or have the right to share this medicine. ReTreat bears <strong>no responsibility</strong> for the safety or condition of listed medications.
+          </div>
+        </div>
+        <div class="form-wrap">
+          <div class="form-card">
+            <div class="fc-hdr"><div class="fc-hdr-dot"><div class="fd fd-r"></div><div class="fd fd-y"></div><div class="fd fd-g"></div></div><span class="fc-title">Medicine Details</span></div>
+            <div class="fc-body">
+              <div class="fgrp"><label>Medicine Name</label><input type="text" id="f-name" placeholder="e.g. Paracetamol 500mg"></div>
+              <div class="fr">
+                <div class="fgrp"><label>Category</label><select id="f-cat"><option>Painkillers</option><option>Antibiotics</option><option>Blood Pressure</option><option>Diabetes</option><option>Vitamins</option><option>Heart</option><option>Digestive</option><option>Respiratory</option><option>Other</option></select></div>
+                <div class="fgrp"><label>Quantity</label><input type="number" id="f-qty" placeholder="Number of units" min="1"></div>
+              </div>
+              <div class="fgrp"><label>Expiry Date</label><input type="date" id="f-exp"></div>
+            </div>
+          </div>
+          <div class="form-card">
+            <div class="fc-hdr"><div class="fc-hdr-dot"><div class="fd fd-r"></div><div class="fd fd-y"></div><div class="fd fd-g"></div></div><span class="fc-title">Source &amp; Pricing</span></div>
+            <div class="fc-body">
+              <div class="fgrp"><label>Source</label>
+                <div class="radio-row">
+                  <div class="ropt sel" id="src-home" onclick="selSrc('home')">⌂ From Home</div>
+                  <div class="ropt" id="src-pharm" onclick="selSrc('pharmacy')">+ From Pharmacy</div>
+                </div>
+              </div>
+              <div class="fgrp"><label>Pricing</label>
+                <div class="radio-row">
+                  <div class="ropt sel" id="pr-free" onclick="selPrice('free')">Free Donation</div>
+                  <div class="ropt" id="pr-paid" onclick="selPrice('paid')">Nominal Price</div>
+                </div>
+              </div>
+              <div class="fgrp" id="price-fld" style="display:none"><label>Price (EGP)</label><input type="number" id="f-price" placeholder="0" min="0"></div>
+            </div>
+          </div>
+          <div class="form-card">
+            <div class="fc-hdr"><div class="fc-hdr-dot"><div class="fd fd-r"></div><div class="fd fd-y"></div><div class="fd fd-g"></div></div><span class="fc-title">Contact &amp; Notes</span></div>
+            <div class="fc-body">
+              <div class="fgrp"><label>Phone Number</label><input type="tel" id="f-phone" placeholder="+20 10x xxxx xxxx"></div>
+              <div class="fgrp"><label>Notes (optional)</label><textarea id="f-notes" rows="3" placeholder="Condition, usage history, packaging details..."></textarea></div>
+            </div>
+          </div>
+          <div class="form-footer">
+            <button class="submit-btn" onclick="addMed()">Publish Listing</button>
+            <button class="cancel-btn" onclick="goPage('home');setNav(document.getElementById('tn-home'))">Cancel</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- MAP -->
+      <div id="pg-map" class="pg">
+        <div class="pg-hdr">
+          <div class="pg-hdr-left"><h2>Nearby Map</h2><p>Live map of medicines available around your current location</p></div>
+          <button class="btn-solid" onclick="requestLocation()">📍 Update Location</button>
+        </div>
+        <div class="map-card">
+          <div class="map-legend">
+            <div class="leg-item"><div class="leg-dot" style="background:#e05c5c"></div>Your Location</div>
+            <div class="leg-item"><div class="leg-dot" style="background:var(--blue)"></div>Pharmacy</div>
+            <div class="leg-item"><div class="leg-dot" style="background:var(--gold)"></div>Home Donor</div>
+          </div>
+          <div class="map-canvas">
+            <div id="leaflet-map"></div>
+          </div>
+          <div style="padding:14px 18px">
+            <p style="font-size:.63rem;font-weight:700;color:var(--ink4);text-transform:uppercase;letter-spacing:1px;margin-bottom:9px">Closest Results</p>
+            <table class="med-table">
+              <thead><tr><th>Medicine</th><th>Source</th><th>Price</th><th>Distance</th><th></th></tr></thead>
+              <tbody id="nearby-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- PROFILE -->
+      <div id="pg-profile" class="pg">
+        <div class="pg-hdr"><div class="pg-hdr-left"><h2>My Account</h2><p>Profile overview and activity summary</p></div></div>
+        <div style="max-width:460px">
+          <div style="background:var(--white);border:1px solid var(--border2);border-radius:var(--r2);overflow:hidden">
+            <div class="profile-hero">
+              <div class="ph-avatar" id="ph-av">R</div>
+              <div>
+                <div class="ph-name" id="ph-name">—</div>
+                <div class="ph-email" id="ph-email">—</div>
+                <div class="ph-method" id="ph-method">—</div>
+              </div>
+            </div>
+            <div class="profile-stats">
+              <div class="pstat"><div class="ps-num" id="ps-don">0</div><div class="ps-lbl">Donated</div></div>
+              <div class="pstat"><div class="ps-num" id="ps-rec">0</div><div class="ps-lbl">Received</div></div>
+              <div class="pstat"><div class="ps-num" id="ps-sav">0</div><div class="ps-lbl">EGP Saved</div></div>
+            </div>
+            <div class="profile-info">
+              <div class="pi-row"><span class="pi-lbl">Phone</span><span class="pi-val" id="pi-phone">—</span></div>
+              <div class="pi-row"><span class="pi-lbl">Member Since</span><span class="pi-val">May 2025</span></div>
+              <div class="pi-row"><span class="pi-lbl">Login Method</span><span class="pi-val" id="pi-method">—</span></div>
+              <div class="pi-row"><span class="pi-lbl">Listings Added</span><span class="pi-val" id="pi-listed">0</span></div>
+              <button class="logout-btn" onclick="logout()">Sign Out</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-bg" id="modal-bg" onclick="closeMod(event)">
+  <div class="modal-box">
+    <div class="modal-hdr">
+      <div class="modal-hdr-dots"><div class="fd fd-r"></div><div class="fd fd-y"></div><div class="fd fd-g"></div></div>
+      <span class="modal-hdr-title" id="mod-title">Medicine Details</span>
+      <button class="modal-close" onclick="closeMod()">✕</button>
+    </div>
+    <div class="modal-body">
+      <h3 id="mod-name"></h3>
+      <div class="modal-pills" id="mod-pills"></div>
+      <div class="modal-info-grid" id="mod-grid"></div>
+      <div class="modal-notes" id="mod-notes"></div>
+      <div class="modal-contact-bar">
+        <span class="mcb-left" id="mod-owner"></span>
+        <span class="mcb-right" id="mod-phone"></span>
+      </div>
+      <div class="phone-field" id="ph-field" style="display:none">
+        <label>Your Phone Number</label>
+        <input type="tel" id="req-ph" placeholder="+20 10x xxxx xxxx">
+      </div>
+      <div class="modal-acts">
+        <button class="btn-request" id="mod-req-btn" onclick="requestMed()">Request Medicine</button>
+        <button class="btn-cancel" onclick="closeMod()">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── ACCEPTANCE MODAL ── -->
+<div id="accept-bg">
+  <div class="accept-box" id="accept-box">
+    <div id="accept-view-terms">
+      <div class="accept-hdr">
+        <div class="accept-hdr-icon">⚠️</div>
+        <div class="accept-hdr-text">
+          <h3>Before You Request This Medicine</h3>
+          <p>You must read and accept all conditions to proceed</p>
+        </div>
+      </div>
+      <div class="accept-body">
+        <div class="accept-drug-row">
+          <div class="accept-drug-icon">💊</div>
+          <div>
+            <div class="accept-drug-name" id="ac-drug-name">—</div>
+            <div class="accept-drug-sub" id="ac-drug-sub">—</div>
+          </div>
+        </div>
+        <div class="accept-title">Platform Terms of Transfer</div>
+        <div class="accept-terms">
+          <div class="accept-term"><div class="accept-term-num">1</div><span>Once you receive this medicine, <strong>it becomes entirely your responsibility.</strong> ReTreat has no further involvement or liability.</span></div>
+          <div class="accept-term"><div class="accept-term-num">2</div><span>ReTreat <strong>does not verify, test, or guarantee</strong> the safety, quality, or expiry of any listed medicine. You accept it as-is.</span></div>
+          <div class="accept-term"><div class="accept-term-num">3</div><span>You agree to <strong>consult a licensed pharmacist or physician</strong> before using this or any community-sourced medication.</span></div>
+          <div class="accept-term"><div class="accept-term-num">4</div><span>Any harm resulting from use of this medicine is <strong>solely your responsibility.</strong> You waive all claims against ReTreat, its team, and the donor.</span></div>
+          <div class="accept-term"><div class="accept-term-num">5</div><span>You confirm you are <strong>18 years of age or older,</strong> or acting under guidance of a licensed medical professional.</span></div>
+        </div>
+        <div class="accept-title" style="margin-top:14px">I Confirm That:</div>
+        <div class="accept-checks">
+          <div class="accept-check-row" onclick="toggleCheck(this,0)"><div class="accept-check-box" id="chk-0"></div><div class="accept-check-label">I understand this medicine is <strong>community-donated</strong> and has not been verified by any medical authority or ReTreat.</div></div>
+          <div class="accept-check-row" onclick="toggleCheck(this,1)"><div class="accept-check-box" id="chk-1"></div><div class="accept-check-label">I accept <strong>full personal responsibility</strong> once I receive this medicine. ReTreat has no business with this drug after transfer.</div></div>
+          <div class="accept-check-row" onclick="toggleCheck(this,2)"><div class="accept-check-box" id="chk-2"></div><div class="accept-check-label">I will <strong>consult a healthcare professional</strong> before using and will not hold the donor or ReTreat liable for any outcome.</div></div>
+        </div>
+        <div class="accept-phone-row">
+          <label>Your Phone Number (for donor contact)</label>
+          <input type="tel" id="ac-phone" placeholder="+20 10x xxxx xxxx" oninput="checkAcceptReady()">
+        </div>
+        <div class="accept-acts">
+          <button class="btn-accept" id="btn-accept-confirm" onclick="confirmAccept()">Accept &amp; Request</button>
+          <button class="btn-accept-cancel" onclick="closeAccept()">Cancel</button>
+        </div>
+      </div>
+    </div>
+    <div id="accept-view-success" class="accept-success">
+      <div class="accept-success-icon">✅</div>
+      <h3>Request Confirmed</h3>
+      <p id="ac-success-msg">Your request has been sent. The donor will contact you on the number you provided. ReTreat's role ends here — the medicine is now your responsibility.</p>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<!-- Leaflet CSS/JS for real map -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+/* ════════════════════════════════════════════════════
+   ReTreat — Enhanced Platform
+   Real OAuth · SDG3 · Shared Link · Live Map
+════════════════════════════════════════════════════ */
+
+/* ── OOP Classes ── */
+class User {
+  constructor(id,name,email,phone,method,avatar=''){
+    this.id=id; this.name=name; this.email=email;
+    this.phone=phone; this.loginMethod=method; this.avatar=avatar;
+    this.donated=0; this.received=0; this.moneySaved=0;
+  }
+  getInitial(){ return this.name?this.name[0].toUpperCase():'?'; }
+}
+
+class Medicine {
+  constructor(id,name,category,qty,expiry,source,priceType,price,phone,notes,ownerId,ownerName,location,viaLink=false){
+    Object.assign(this,{id,name,category,qty,expiry,source,priceType,price,phone,notes,ownerId,ownerName,location,viaLink});
+  }
+  isExpired(){ return this.expiry&&new Date(this.expiry)<new Date(); }
+  getPriceLabel(){ return this.priceType==='free'?'Free':'EGP '+this.price; }
+  getCategoryColor(){
+    const m={Painkillers:'#c8a060',Antibiotics:'#1a6b5a',Vitamins:'#e0b84a',Heart:'#8b2020',Diabetes:'#1a3a5c','Blood Pressure':'#5a3a8b',Digestive:'#2d7a4a',Respiratory:'#1a5c7a',Other:'#5a6a7a'};
+    return m[this.category]||'#5a6a7a';
+  }
+}
+
+class MedicineStore {
+  constructor(){ this.items=[]; }
+  add(m){ this.items.push(m); this._persist(); }
+  getAll(){ return this.items.filter(m=>!m.isExpired()); }
+  getById(id){ return this.items.find(m=>m.id===id)||null; }
+  filterBy(t){
+    const a=this.getAll();
+    if(t==='free')     return a.filter(m=>m.priceType==='free');
+    if(t==='paid')     return a.filter(m=>m.priceType==='paid');
+    if(t==='pharmacy') return a.filter(m=>m.source==='pharmacy');
+    if(t==='home')     return a.filter(m=>m.source==='home');
+    if(t==='shared')   return a.filter(m=>m.viaLink);
+    return a;
+  }
+  filterByCategory(c){ return this.getAll().filter(m=>m.category===c); }
+  search(q){ const l=q.toLowerCase(); return this.getAll().filter(m=>m.name.toLowerCase().includes(l)||m.category.toLowerCase().includes(l)||(m.location.label&&m.location.label.toLowerCase().includes(l))); }
+  stats(){ const a=this.getAll(); return{total:a.length,free:a.filter(m=>m.priceType==='free').length,pharmacy:a.filter(m=>m.source==='pharmacy').length,home:a.filter(m=>m.source==='home').length}; }
+  _persist(){
+    try{ localStorage.setItem('retreat_meds',JSON.stringify(this.items)); }catch(e){}
+  }
+  _load(){
+    try{
+      const d=localStorage.getItem('retreat_meds');
+      if(d){ const arr=JSON.parse(d); this.items=arr.map(o=>Object.assign(new Medicine(0,'','',0,'','','',0,'','','','',{}),o)); }
+    }catch(e){}
+  }
+}
+
+class LocationService {
+  constructor(){ this.userPos=null; this.leafletMap=null; this.markers=[]; }
+  requestLocation(cb){
+    if(!navigator.geolocation){ cb(null,'Geolocation not supported'); return; }
+    navigator.geolocation.getCurrentPosition(
+      p=>{ this.userPos={lat:p.coords.latitude,lng:p.coords.longitude}; cb(this.userPos); },
+      e=>cb(null,e.message),
+      {enableHighAccuracy:true,timeout:10000}
+    );
+  }
+  distanceTo(lat,lng){
+    if(!this.userPos) return null;
+    const R=6371,dL=(lat-this.userPos.lat)*Math.PI/180,dG=(lng-this.userPos.lng)*Math.PI/180,
+      a=Math.sin(dL/2)**2+Math.cos(this.userPos.lat*Math.PI/180)*Math.cos(lat*Math.PI/180)*Math.sin(dG/2)**2;
+    return (R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a))).toFixed(1);
+  }
+}
+
+class AuthService {
+  constructor(){ this.currentUser=null; }
+  login(name,email,phone,method,avatar=''){ this.currentUser=new User(Date.now(),name,email,phone,method,avatar); return this.currentUser; }
+  logout(){ this.currentUser=null; }
+  isLoggedIn(){ return this.currentUser!==null; }
+  getUser(){ return this.currentUser; }
+}
+
+/* ── Instantiate ── */
+const store   = new MedicineStore();
+const locSvc  = new LocationService();
+const authSvc = new AuthService();
+
+store._load(); // Restore from localStorage (shared link submissions persist)
+
+let activeFilter='all', activeMedId=null, selSrcVal='home', selPriceVal='free', reqStep=0;
+let shPriceVal='free';
+
+/* ── Seed data ── */
+const seeds=[
+  [1,'Paracetamol 500mg','Painkillers',20,'2026-08-01','home','free',0,'01012345678','Full box, only 4 tablets used. Sealed blister packs.','u1','Ahmed Mohamed',{lat:30.07,lng:31.28,label:'Nasr City, Cairo'}],
+  [2,'Amoxicillin 250mg','Antibiotics',14,'2025-12-20','pharmacy','paid',15,'01098765432','Half box from Al-Shifa Pharmacy. Doctor prescribed but not completed.','u2','Al-Shifa Pharmacy',{lat:30.06,lng:31.27,label:'Heliopolis'}],
+  [3,'Amlodipine 5mg','Blood Pressure',30,'2026-05-15','home','free',0,'01155443322',"Father's medication — doctor changed prescription. Unopened.",'u3','Samar Ali',{lat:30.08,lng:31.29,label:'Ain Shams'}],
+  [4,'Metformin 500mg','Diabetes',60,'2026-11-30','pharmacy','paid',25,'01234567890','Two full boxes. Purchased from Al-Nour Pharmacy.','u4','Al-Nour Pharmacy',{lat:30.05,lng:31.26,label:'Al-Matariya'}],
+  [5,'Vitamin C 1000mg','Vitamins',50,'2027-03-01','home','free',0,'01012312312','Unopened supplement box. Effervescent tablets.','u5','Mona Hassan',{lat:30.09,lng:31.30,label:'Al-Zaitoun'}],
+  [6,'Omeprazole 20mg','Digestive',28,'2026-07-10','home','paid',10,'01099887766','Approximately two weeks supply remaining.','u6','Khaled Omar',{lat:30.07,lng:31.25,label:'Banha, Qalyubia'}],
+  [7,'Salbutamol Inhaler','Respiratory',1,'2026-09-01','pharmacy','paid',30,'01155667788','Nearly new, used twice only. Original box included.','u7','Al-Hilal Pharmacy',{lat:30.10,lng:31.31,label:'Shubra'}],
+  [8,'Aspirin 100mg','Heart',90,'2026-12-01','home','free',0,'01066554433','Full unopened box. Cardiologist changed protocol.','u8','Nahed Mahmoud',{lat:30.06,lng:31.28,label:'Al-Marg'}],
+  [9,'Zinc + Vitamin D','Vitamins',45,'2027-01-15','home','free',0,'01012398765','Dietary supplement. Not completed after lifestyle change.','u9','Rami Salem',{lat:30.08,lng:31.27,label:'Heliopolis'}],
+  [10,'Cetirizine 10mg','Other',18,'2026-06-20','pharmacy','paid',8,'01087654321','Antihistamine tablets from Al-Nahda Pharmacy.','u10','Al-Nahda Pharmacy',{lat:30.05,lng:31.29,label:'Ain Shams'}],
+];
+if(store.items.length===0){
+  seeds.forEach(s=>{ const m=new Medicine(...s); store.items.push(m); });
+  store._persist();
+}
+
+/* ══ RENDER TABLE ══ */
+function renderTable(meds){
+  const tb=document.getElementById('med-tbody');
+  if(!meds.length){ tb.innerHTML=`<tr class="empty-row"><td colspan="7">No medicines match your criteria</td></tr>`; return; }
+  tb.innerHTML=meds.map(m=>`
+    <tr onclick="openMod(${m.id})">
+      <td><div class="med-name-cell">
+        <span class="med-nm">${m.name}${m.viaLink?' <span class="tag tag-shared" style="font-size:.58rem">via link</span>':''}</span>
+        <span class="med-cat" style="color:${m.getCategoryColor()}">${m.category}</span>
+      </div></td>
+      <td><span class="tag ${m.source==='pharmacy'?'tag-pharm':'tag-home'}">${m.source==='pharmacy'?'Pharmacy':'Home'}</span></td>
+      <td class="${m.priceType==='free'?'price-free':'price-paid'}">${m.getPriceLabel()}</td>
+      <td class="qty-cell">${m.qty}</td>
+      <td class="loc-cell">${m.location.label||'—'}${locSvc.userPos?`<span class="dist-pill">${locSvc.distanceTo(m.location.lat,m.location.lng)} km</span>`:''}</td>
+      <td><span class="tag">${m.expiry||'N/A'}</span></td>
+      <td><button class="action-btn" onclick="event.stopPropagation();openMod(${m.id})">View</button></td>
+    </tr>`).join('');
+}
+
+function updateStats(){
+  const s=store.stats();
+  ['total','free','pharm','home'].forEach((k,i)=>{
+    const vals=[s.total,s.free,s.pharmacy,s.home];
+    document.getElementById('sc-'+['total','free','pharm','home'][i]).textContent=vals[i];
+    document.getElementById('ss-'+['total','free','pharm','home'][i]).textContent=vals[i];
+  });
+  document.getElementById('sbb-all').textContent=s.total;
+  document.getElementById('sbb-free').textContent=s.free;
+  document.getElementById('sbb-paid').textContent=store.filterBy('paid').length;
+  document.getElementById('sbb-pharm').textContent=s.pharmacy;
+  document.getElementById('sbb-home').textContent=s.home;
+}
+
+function filterTab(t,btn){
+  activeFilter=t;
+  document.querySelectorAll('.ftab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  applyFilter();
+}
+function sideFilter(t,btn){
+  activeFilter=t;
+  document.querySelectorAll('.sb-item').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  goPage('home'); setNav(document.getElementById('tn-home'));
+  applyFilter();
+}
+function filterCat(c){ renderTable(store.filterByCategory(c)); goPage('home'); setNav(document.getElementById('tn-home')); }
+function filterMeds(){ const q=document.getElementById('search-inp').value.trim(); renderTable(q?store.search(q):store.filterBy(activeFilter)); }
+function applyFilter(){ renderTable(store.filterBy(activeFilter)); }
+
+/* ══ MODAL ══ */
+function openMod(id){
+  const m=store.getById(id); if(!m)return;
+  activeMedId=id; reqStep=0;
+  document.getElementById('mod-title').textContent=m.name;
+  document.getElementById('mod-name').textContent=m.name;
+  document.getElementById('mod-owner').textContent=m.ownerName;
+  document.getElementById('mod-phone').textContent=m.phone;
+  document.getElementById('mod-notes').textContent=m.notes||'No additional notes.';
+  document.getElementById('ph-field').style.display='none';
+  document.getElementById('mod-req-btn').textContent='Request Medicine';
+  document.getElementById('mod-pills').innerHTML=`
+    <span class="tag" style="background:${m.getCategoryColor()}22;color:${m.getCategoryColor()}">${m.category}</span>
+    <span class="tag ${m.priceType==='free'?'tag-free':'tag-paid'}">${m.getPriceLabel()}</span>
+    <span class="tag ${m.source==='pharmacy'?'tag-pharm':'tag-home'}">${m.source==='pharmacy'?'Pharmacy':'Home'}</span>
+    ${m.viaLink?'<span class="tag tag-shared">Submitted via link</span>':''}`;
+  document.getElementById('mod-grid').innerHTML=`
+    <div class="mig-item"><div class="mig-lbl">Quantity</div><div class="mig-val">${m.qty} units</div></div>
+    <div class="mig-item"><div class="mig-lbl">Expiry</div><div class="mig-val">${m.expiry||'N/A'}</div></div>
+    <div class="mig-item"><div class="mig-lbl">Location</div><div class="mig-val">${m.location.label||'—'}</div></div>
+    <div class="mig-item"><div class="mig-lbl">Distance</div><div class="mig-val">${locSvc.userPos?locSvc.distanceTo(m.location.lat,m.location.lng)+' km':'Enable location'}</div></div>`;
+  document.getElementById('modal-bg').classList.add('open');
+}
+function closeMod(e){
+  if(!e||e.target===document.getElementById('modal-bg'))
+    document.getElementById('modal-bg').classList.remove('open');
+}
+/* ── acceptance state ── */
+let acceptChecks=[false,false,false];
+
+function requestMed(){
+  // Clicking "Request Medicine" now opens the acceptance modal instead
+  const m=store.getById(activeMedId); if(!m)return;
+  document.getElementById('modal-bg').classList.remove('open');
+  openAccept(m);
+}
+
+/* ── ACCEPTANCE MODAL ── */
+function openAccept(m){
+  // Reset state
+  acceptChecks=[false,false,false];
+  [0,1,2].forEach(i=>{
+    const row=document.querySelectorAll('.accept-check-row')[i];
+    const box=document.getElementById('chk-'+i);
+    if(row) row.classList.remove('checked');
+    if(box){ box.textContent=''; }
+  });
+  document.getElementById('ac-phone').value='';
+  document.getElementById('btn-accept-confirm').classList.remove('ready');
+  document.getElementById('btn-accept-confirm').disabled=true;
+  document.getElementById('accept-view-terms').style.display='block';
+  document.getElementById('accept-view-success').style.display='none';
+  // Fill drug info
+  document.getElementById('ac-drug-name').textContent=m.name;
+  document.getElementById('ac-drug-sub').textContent=
+    m.category+' · '+m.getPriceLabel()+' · from '+m.ownerName;
+  document.getElementById('accept-bg').classList.add('open');
+}
+
+function toggleCheck(row,idx){
+  acceptChecks[idx]=!acceptChecks[idx];
+  row.classList.toggle('checked',acceptChecks[idx]);
+  const box=document.getElementById('chk-'+idx);
+  box.textContent=acceptChecks[idx]?'✓':'';
+  checkAcceptReady();
+}
+
+function checkAcceptReady(){
+  const allChecked=acceptChecks.every(Boolean);
+  const hasPhone=document.getElementById('ac-phone').value.trim().length>6;
+  const btn=document.getElementById('btn-accept-confirm');
+  const ready=allChecked&&hasPhone;
+  btn.disabled=!ready;
+  btn.classList.toggle('ready',ready);
+}
+
+function confirmAccept(){
+  const m=store.getById(activeMedId); if(!m)return;
+  const ph=document.getElementById('ac-phone').value.trim();
+  if(!acceptChecks.every(Boolean)||!ph){return;}
+  // Mark as received
+  if(authSvc.currentUser){authSvc.currentUser.received++;updateProfileUI();}
+  // Show success screen
+  document.getElementById('accept-view-terms').style.display='none';
+  const success=document.getElementById('accept-view-success');
+  success.style.display='flex';
+  document.getElementById('ac-success-msg').textContent=
+    `Your request for "${m.name}" has been sent to ${m.ownerName} (${m.phone}). They will contact you at ${ph}. ReTreat's role ends here — once you receive this medicine it is entirely your responsibility.`;
+  setTimeout(()=>{ closeAccept(); },4000);
+}
+
+function closeAccept(){
+  document.getElementById('accept-bg').classList.remove('open');
+}
+// Close on background click
+document.addEventListener('click',e=>{
+  if(e.target===document.getElementById('accept-bg')) closeAccept();
+});
+
+/* ══ ADD MEDICINE ══ */
+function selSrc(v){
+  selSrcVal=v;
+  document.getElementById('src-home').classList.toggle('sel',v==='home');
+  document.getElementById('src-pharm').classList.toggle('sel',v==='pharmacy');
+}
+function selPrice(v){
+  selPriceVal=v;
+  document.getElementById('pr-free').classList.toggle('sel',v==='free');
+  document.getElementById('pr-paid').classList.toggle('sel',v==='paid');
+  document.getElementById('price-fld').style.display=v==='paid'?'block':'none';
+}
+function addMed(){
+  const name=document.getElementById('f-name').value.trim();
+  const qty=parseInt(document.getElementById('f-qty').value)||0;
+  const phone=document.getElementById('f-phone').value.trim();
+  if(!name){showToast('Please enter the medicine name');return;}
+  if(!qty){showToast('Please enter the quantity');return;}
+  if(!phone){showToast('Please enter a contact number');return;}
+  const cat=document.getElementById('f-cat').value;
+  const exp=document.getElementById('f-exp').value;
+  const notes=document.getElementById('f-notes').value.trim();
+  const price=parseFloat(document.getElementById('f-price').value)||0;
+  const loc=locSvc.userPos?{lat:locSvc.userPos.lat,lng:locSvc.userPos.lng,label:'My Location'}:{lat:30.07,lng:31.28,label:'Cairo'};
+  const u=authSvc.currentUser;
+  store.add(new Medicine(Date.now(),name,cat,qty,exp,selSrcVal,selPriceVal,price,phone,notes,u?.id||'guest',u?.name||'Anonymous',loc,false));
+  if(u){u.donated++;updateProfileUI();}
+  ['f-name','f-qty','f-exp','f-phone','f-notes','f-price'].forEach(id=>{try{document.getElementById(id).value='';}catch(e){}});
+  updateStats(); applyFilter();
+  showToast('Listing published successfully ✓');
+  goPage('home'); setNav(document.getElementById('tn-home'));
+}
+
+/* ══ SHARED LINK ══ */
+const SHARE_URL = window.location.href.split('?')[0] + '?submit=1';
+function copyShareLink(){
+  window.open(SHARE_URL,'_blank');
+  navigator.clipboard.writeText(SHARE_URL).then(()=>showToast('Public add-drug link copied & opened 🔗')).catch(()=>{
+    prompt('Copy this link:',SHARE_URL);
+  });
+}
+function shSelPrice(v){
+  shPriceVal=v;
+  document.getElementById('sh-free').classList.toggle('sel',v==='free');
+  document.getElementById('sh-paid').classList.toggle('sel',v==='paid');
+  document.getElementById('sh-price-fld').style.display=v==='paid'?'block':'none';
+}
+function submitShared(){
+  const name=document.getElementById('sh-mname').value.trim();
+  const donor=document.getElementById('sh-name').value.trim();
+  const phone=document.getElementById('sh-phone').value.trim();
+  const qty=parseInt(document.getElementById('sh-qty').value)||0;
+  if(!name||!donor||!phone||!qty){showToast('Please fill all required fields');return;}
+  const cat=document.getElementById('sh-cat').value;
+  const exp=document.getElementById('sh-exp').value;
+  const notes=document.getElementById('sh-notes').value.trim();
+  const price=parseFloat(document.getElementById('sh-price').value)||0;
+  const sharedLoc=locSvc.userPos
+    ? {lat:locSvc.userPos.lat,lng:locSvc.userPos.lng,label:'Shared User Location'}
+    : {lat:30.07,lng:31.28,label:'Cairo (via link)'};
+
+  store.add(new Medicine(Date.now(),name,cat,qty,exp,'home',shPriceVal,price,phone,notes,'shared',donor,sharedLoc,true));
+  showToast('Thank you! Your listing has been submitted ✓');
+  setTimeout(()=>{
+    document.getElementById('shared-screen').style.display='none';
+    document.getElementById('auth-screen').style.display='flex';
+  },2000);
+}
+
+/* ══ LEAFLET MAP ══ */
+let leafletMap=null;
+function initMap(lat,lng){
+  const container=document.getElementById('leaflet-map');
+  if(leafletMap){ leafletMap.setView([lat,lng],13); }
+  else{
+    leafletMap=L.map('leaflet-map').setView([lat,lng],13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap',maxZoom:18}).addTo(leafletMap);
+  }
+  // Clear existing markers
+  if(locSvc._leafletMarkers){ locSvc._leafletMarkers.forEach(m=>m.remove()); }
+  locSvc._leafletMarkers=[];
+
+  // User marker
+  const youIcon=L.divIcon({html:`<div style="width:16px;height:16px;border-radius:50%;background:#e05c5c;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.3);animation:mypulse 1.5s infinite"></div>`,className:'',iconSize:[16,16],iconAnchor:[8,8]});
+  locSvc._leafletMarkers.push(L.marker([lat,lng],{icon:youIcon}).addTo(leafletMap).bindPopup('<b>You are here</b>'));
+
+  // Medicine markers
+  store.getAll().forEach(m=>{
+    if(!m.location.lat) return;
+    const color=m.source==='pharmacy'?'#1a3a5c':'#9a7340';
+    const icon=L.divIcon({html:`<div style="width:13px;height:13px;border-radius:50%;background:${color};border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.25);cursor:pointer"></div>`,className:'',iconSize:[13,13],iconAnchor:[6,6]});
+    const mk=L.marker([m.location.lat,m.location.lng],{icon}).addTo(leafletMap)
+      .bindPopup(`<b>${m.name}</b><br>${m.getPriceLabel()} · ${m.location.label}<br><small>${locSvc.distanceTo(m.location.lat,m.location.lng)} km away</small>`);
+    locSvc._leafletMarkers.push(mk);
+  });
+
+  // Nearby table
+  const tb=document.getElementById('nearby-tbody');
+  tb.innerHTML=store.getAll()
+    .filter(m=>m.location.lat)
+    .sort((a,b)=>parseFloat(locSvc.distanceTo(a.location.lat,a.location.lng))-parseFloat(locSvc.distanceTo(b.location.lat,b.location.lng)))
+    .slice(0,6)
+    .map(m=>`<tr onclick="openMod(${m.id})" style="cursor:pointer">
+      <td><div class="med-name-cell"><span class="med-nm">${m.name}</span><span class="med-cat">${m.location.label}</span></div></td>
+      <td><span class="tag ${m.source==='pharmacy'?'tag-pharm':'tag-home'}">${m.source==='pharmacy'?'Pharmacy':'Home'}</span></td>
+      <td class="${m.priceType==='free'?'price-free':'price-paid'}">${m.getPriceLabel()}</td>
+      <td><span class="dist-pill">${locSvc.distanceTo(m.location.lat,m.location.lng)} km</span></td>
+      <td><button class="action-btn" onclick="event.stopPropagation();openMod(${m.id})">View</button></td>
+    </tr>`).join('');
+}
+
+function requestLocation(){
+  showToast('Detecting your location...');
+  locSvc.requestLocation((pos,err)=>{
+    if(err){ showToast('Could not detect location: '+err); return; }
+    showToast('Location found ✓');
+    initMap(pos.lat,pos.lng);
+    applyFilter();
+  });
+}
+
+/* ══ OAUTH — GOOGLE ══ */
+window.onGoogleSignIn = function(response){
+  try{
+    const parts=response.credential.split('.');
+    const payload=JSON.parse(atob(parts[1].replace(/-/g,'+').replace(/_/g,'/')));
+    launchApp(authSvc.login(payload.name||payload.email,payload.email,'','Google',payload.picture||''));
+    showToast('Signed in with Google ✓');
+  }catch(e){
+    showToast('Google sign-in succeeded (demo mode)');
+    launchApp(authSvc.login('Google User','user@gmail.com','','Google',''));
+  }
+};
+function triggerGoogleSignIn(){
+  if(window.google&&google.accounts){
+    google.accounts.id.initialize({client_id:'YOUR_GOOGLE_CLIENT_ID',callback:onGoogleSignIn});
+    google.accounts.id.prompt();
+  } else {
+    // Demo fallback when no real client ID
+    showToast('Google login — configure Client ID for production');
+    launchApp(authSvc.login('Mohamed Ahmed (Google)','user@gmail.com','01012345678','Google',''));
+  }
+}
+
+/* ══ OAUTH — FACEBOOK ══ */
+window.fbAsyncInit = function(){
+  FB.init({appId:'YOUR_FACEBOOK_APP_ID',cookie:true,xfbml:true,version:'v19.0'});
+};
+function triggerFacebookSignIn(){
+  if(window.FB){
+    FB.login(response=>{
+      if(response.authResponse){
+        FB.api('/me',{fields:'name,email,picture'},(data)=>{
+          launchApp(authSvc.login(data.name,data.email||'fb@user.com','','Facebook',data.picture?.data?.url||''));
+          showToast('Signed in with Facebook ✓');
+        });
+      } else { showToast('Facebook login cancelled'); }
+    },{scope:'public_profile,email'});
+  } else {
+    showToast('Facebook login — configure App ID for production');
+    launchApp(authSvc.login('Ahmed Ali (Facebook)','user@facebook.com','01012345678','Facebook',''));
+  }
+}
+
+/* ══ OAUTH — APPLE ══ */
+function triggerAppleSignIn(){
+  if(window.AppleID){
+    AppleID.auth.init({clientId:'YOUR_APPLE_SERVICE_ID',scope:'name email',redirectURI:window.location.href,usePopup:true});
+    AppleID.auth.signIn().then(data=>{
+      const n=data.user?.name;
+      const name=n?`${n.firstName} ${n.lastName}`:data.authorization?.id_token?.split('.')[1]||'Apple User';
+      launchApp(authSvc.login(name,data.user?.email||'user@icloud.com','','Apple',''));
+      showToast('Signed in with Apple ✓');
+    }).catch(()=>showToast('Apple sign-in cancelled'));
+  } else {
+    showToast('Apple login — configure Service ID for production');
+    launchApp(authSvc.login('Sara Mohamed (Apple)','user@icloud.com','01012345678','Apple',''));
+  }
+}
+
+/* ══ AUTH ══ */
+function switchAuth(mode){
+  document.querySelectorAll('.atab').forEach((t,i)=>t.classList.toggle('active',(mode==='login'&&i===0)||(mode==='register'&&i===1)));
+  document.getElementById('login-form').style.display=mode==='login'?'block':'none';
+  document.getElementById('register-form').style.display=mode==='register'?'block':'none';
+}
+function emailLogin(){
+  const e=document.getElementById('auth-email').value.trim(),p=document.getElementById('auth-pass').value.trim();
+  if(!e||!p){showToast('Please fill in all fields');return;}
+  launchApp(authSvc.login(e.split('@')[0],e,'','Email'));
+}
+function register(){
+  const n=document.getElementById('reg-name').value.trim(),e=document.getElementById('reg-email').value.trim(),
+    ph=document.getElementById('reg-phone').value.trim(),p=document.getElementById('reg-pass').value.trim();
+  if(!n||!e||!ph||!p){showToast('Please complete all fields');return;}
+  launchApp(authSvc.login(n,e,ph,'Email'));
+}
+function launchApp(u){
+  document.getElementById('auth-screen').style.display='none';
+  document.getElementById('app').style.display='flex';
+  updateProfileUI(); updateStats(); applyFilter();
+  // Try auto-locate
+  if(navigator.geolocation){ locSvc.requestLocation((pos)=>{ if(pos){ applyFilter(); } }); }
+}
+function updateProfileUI(){
+  const u=authSvc.currentUser; if(!u)return;
+  const init=u.getInitial();
+  // Avatar: show image if available
+  const setAv=(id)=>{
+    const el=document.getElementById(id);
+    if(u.avatar){ el.innerHTML=`<img src="${u.avatar}" alt="${init}" onerror="this.parentElement.textContent='${init}'">`; }
+    else{ el.textContent=init; }
+  };
+  setAv('tb-av'); setAv('ph-av');
+  document.getElementById('tb-uname').textContent=u.name.split(' ')[0];
+  document.getElementById('ph-name').textContent=u.name;
+  document.getElementById('ph-email').textContent=u.email;
+  document.getElementById('ph-method').textContent=u.loginMethod;
+  document.getElementById('pi-phone').textContent=u.phone||'Not provided';
+  document.getElementById('pi-method').textContent=u.loginMethod;
+  document.getElementById('ps-don').textContent=u.donated;
+  document.getElementById('ps-rec').textContent=u.received;
+  document.getElementById('ps-sav').textContent=u.moneySaved;
+  document.getElementById('pi-listed').textContent=u.donated;
+}
+function logout(){
+  authSvc.logout();
+  document.getElementById('app').style.display='none';
+  document.getElementById('auth-screen').style.display='flex';
+}
+
+/* ══ NAV ══ */
+function goPage(name){
+  document.querySelectorAll('.pg').forEach(p=>p.classList.remove('active'));
+  document.getElementById('pg-'+name).classList.add('active');
+  if(name==='map'){
+    if(locSvc.userPos){ initMap(locSvc.userPos.lat,locSvc.userPos.lng); }
+    else{ requestLocation(); }
+    // Leaflet needs size recalc after display change
+    setTimeout(()=>{ if(leafletMap) leafletMap.invalidateSize(); },100);
+  }
+}
+function setNav(btn){
+  document.querySelectorAll('.tnav').forEach(t=>t.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+}
+
+
+/* AUTO LOCATION */
+window.addEventListener('load',()=>{
+  if(navigator.geolocation){
+    navigator.geolocation.getCurrentPosition(
+      pos=>{
+        locSvc.userPos={
+          lat:pos.coords.latitude,
+          lng:pos.coords.longitude
+        };
+        initMap(pos.coords.latitude,pos.coords.longitude);
+        applyFilter();
+        showToast('Location enabled successfully 📍');
+      },
+      ()=>{
+        console.log('Location permission denied');
+      }
+    );
+  }
+});
+
+/* ══ TOAST ══ */
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer=setTimeout(()=>t.classList.remove('show'),3200);
+}
+
+/* ══ SHARE LINK URL DISPLAY ══ */
+document.addEventListener('DOMContentLoaded',()=>{
+  const url=SHARE_URL;
+  document.getElementById('ap-share-url').textContent=url.length>48?url.slice(0,48)+'…':url;
+});
+
+/* ══ BOOT ══ */
+const params=new URLSearchParams(window.location.search);
+const isSharedSubmit=params.get('submit')==='1';
+
+setTimeout(()=>{
+  const splash=document.getElementById('sdg-splash');
+  splash.style.opacity='0';
+  setTimeout(()=>{
+    splash.style.display='none';
+    if(isSharedSubmit){
+      document.getElementById('shared-screen').style.display='flex';
+    } else {
+      document.getElementById('auth-screen').style.display='flex';
+    }
+  },700);
+},3000);
+</script>
+</body>
+</html>
